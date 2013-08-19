@@ -83,4 +83,31 @@ function prepareValueForCSV(val) {
     val = val.replace(/"/g, '""');
     return '"' + val + '"';
 }
+function printGrid(grid) {
+    var gridElement = grid,
+        win = window.open('', '', 'width=800, height=500'),
+        doc = win.document.open(),
+        htmlStart = 
+            '<!DOCTYPE html>' +
+            '<html>' +
+            '<head>' +
+            '<meta charset="utf-8" />' +
+            '<title>Report</title>' +
+            '<link href="http://cdn.kendostatic.com/' + kendo.version + '/styles/kendo.common.min.css" rel="stylesheet" /> '+
+            '<style>' +
+            'html { font: 11pt sans-serif; }' +
+            '.k-grid, .k-grid-content { height: auto !important; }' +
+            '.k-grid-toolbar, .k-grid-pager > .k-link { display: none; }' +
+            '.k-pager-sizes, .k-grouping-header, .k-toolbar,.k-grid-pager {display: none;}'+
+            '</style>' +
+            '</head>' +
+            '<body>',
+        htmlEnd = 
+            '</body>' +
+            '</html>';
+
+    doc.write(htmlStart + gridElement.clone()[0].outerHTML + htmlEnd);
+    doc.close();
+    win.print();
+}
 

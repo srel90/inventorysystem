@@ -48,6 +48,31 @@ endif;
 if(isset($_POST) && !empty($_POST)):
 /*START*/
 switch($_POST['mode']):
+	case 'searchreceivedlistreport':
+	$keyword = preg_replace('/\s\s+/', ' ', $_POST['search']);
+	$searchTerms = explode(' ', $keyword);
+	$searchTermBits = array();
+	foreach ($searchTerms as $term) {
+	    $term = trim($term);
+	    if (!empty($term)) {
+	        $searchTermBits[] = "r.purchaseOrderID LIKE '%$term%'";
+			$searchTermBits[] = "r.code LIKE '%$term%'";
+			$searchTermBits[] = "r.orderDate LIKE '%$term%'";
+			$searchTermBits[] = "r.amount LIKE '%$term%'";
+			$searchTermBits[] = "r.grandTotal LIKE '%$term%'";
+			$searchTermBits[] = "r.receiveDate LIKE '%$term%'";
+			$searchTermBits[] = "u.firstName LIKE '%$term%'";
+			$searchTermBits[] = "u.lastName LIKE '%$term%'";
+	    }
+	}
+		if(empty($_POST['search'])){
+			$strsql="SELECT r.*,concat(u.firstName,' ',u.lastName) as orderByName FROM purchaseorder r LEFT OUTER JOIN users u ON r.orderBy=u.userID";
+		}else{
+			$strsql="SELECT r.*,concat(u.firstName,' ',u.lastName) as orderByName FROM purchaseorder r LEFT OUTER JOIN users u ON r.orderBy=u.userID WHERE ".implode(' OR ', $searchTermBits)."";
+		}
+		$database->showDataAsJson($strsql);
+	break;
+
 	case 'selectAllProduct':
 		$strsql="SELECT p.*,c.category,t.type FROM products p LEFT OUTER JOIN productcategory c ON p.categoryID=c.categoryID LEFT OUTER JOIN producttype t ON p.typeID=t.typeID";
 		$database->showDataAsJson($strsql);
@@ -161,7 +186,7 @@ switch($_POST['mode']):
 		echo "{\"data\":" .json_encode($_SESSION['gridTempPurchase']). ",\"total\":".count($_SESSION['gridTempPurchase'])."}";
 	break;
 	case 'selectAllPurchase':
-		$strsql="SELECT r.*,concat(u.firstName,' ',u.lastName) as recordByName FROM purchaseorder r LEFT OUTER JOIN users u ON r.orderBy=u.userID";
+		$strsql="SELECT r.*,concat(u.firstName,' ',u.lastName) as orderByName FROM purchaseorder r LEFT OUTER JOIN users u ON r.orderBy=u.userID";
 		$database->showDataAsJson($strsql);
 	break;	
 	case 'selectAllPurchaseDetail':
@@ -483,7 +508,7 @@ var script= new function() {
 	        	{field: "orderDate",title: "Order Date",format: "{0: yyyy-MM-dd}"},
 	        	{field: "amount",title: "Amount",width: 70},
 	        	{field: "grandTotal",title: "Grand Total",type:"number",width: 70},
-	        	{field: "recordByName",title: "Record By"},
+	        	{field: "orderByName",title: "Order By"},
 	        	{field: "status",title: "Status",template:'#=status==2?"Completed":"Pending"#'}      	
 	        	]
 	    });

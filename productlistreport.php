@@ -17,30 +17,34 @@ case 'search':
 	foreach ($searchTerms as $term) {
 	    $term = trim($term);
 	    if (!empty($term)) {
-	        $searchTermBits[] = "u.userID LIKE '%$term%'";
-			$searchTermBits[] = "u.code LIKE '%$term%'";
-			$searchTermBits[] = "u.IDCard LIKE '%$term%'";
-			$searchTermBits[] = "u.firstName LIKE '%$term%'";
-			$searchTermBits[] = "u.lastName LIKE '%$term%'";
-			$searchTermBits[] = "u.address LIKE '%$term%'";
-			$searchTermBits[] = "u.phone LIKE '%$term%'";
-			$searchTermBits[] = "u.mobile LIKE '%$term%'";
-			$searchTermBits[] = "u.email LIKE '%$term%'";
-			$searchTermBits[] = "u.position LIKE '%$term%'";
-			$searchTermBits[] = "u.username LIKE '%$term%'";
-			$searchTermBits[] = "ut.type LIKE '%$term%'";
+	        $searchTermBits[] = "p.productID LIKE '%$term%'";
+			$searchTermBits[] = "p.code LIKE '%$term%'";
+			$searchTermBits[] = "c.category LIKE '%$term%'";
+			$searchTermBits[] = "t.type LIKE '%$term%'";
+			$searchTermBits[] = "p.name LIKE '%$term%'";
+			$searchTermBits[] = "p.description LIKE '%$term%'";
+			$searchTermBits[] = "p.color LIKE '%$term%'";
+			$searchTermBits[] = "p.size LIKE '%$term%'";
+			$searchTermBits[] = "p.listOfMaterial LIKE '%$term%'";
+			$searchTermBits[] = "p.price LIKE '%$term%'";
+			$searchTermBits[] = "p.cost LIKE '%$term%'";
+			$searchTermBits[] = "p.unit LIKE '%$term%'";
+			$searchTermBits[] = "p.quantity LIKE '%$term%'";
+			$searchTermBits[] = "p.pointOfOrder LIKE '%$term%'";
+			$searchTermBits[] = "p.supplier LIKE '%$term%'";
+			$searchTermBits[] = "p.contactPerson LIKE '%$term%'";
 	    }
 	}
 		if(empty($_POST['search'])){
-			$strsql="SELECT u.*,ut.type FROM users u LEFT OUTER JOIN usertype ut ON u.typeID=ut.typeID";
+			$strsql="SELECT p.*,c.category,t.type FROM products p LEFT OUTER JOIN productcategory c ON p.categoryID=c.categoryID LEFT OUTER JOIN producttype t ON p.typeID=t.typeID";
 		}else{
-			$strsql="SELECT u.*,ut.type FROM users u LEFT OUTER JOIN usertype ut ON u.typeID=ut.typeID WHERE ".implode(' OR ', $searchTermBits)."";
+			$strsql="SELECT p.*,c.category,t.type FROM products p LEFT OUTER JOIN productcategory c ON p.categoryID=c.categoryID LEFT OUTER JOIN producttype t ON p.typeID=t.typeID WHERE ".implode(' OR ', $searchTermBits)."";
 		}
 		$database->showDataAsJson($strsql);
 	break;
 
-	case 'selectAllUser':
-		$strsql="SELECT u.*,ut.type FROM users u LEFT OUTER JOIN usertype ut ON u.typeID=ut.typeID";
+	case 'selectAllProduct':
+		$strsql="SELECT p.*,c.category,t.type FROM products p LEFT OUTER JOIN productcategory c ON p.categoryID=c.categoryID LEFT OUTER JOIN producttype t ON p.typeID=t.typeID";
 		$database->showDataAsJson($strsql);
 	break;
 endswitch;
@@ -121,8 +125,8 @@ var script= new function() {
 	        			read: {
 		        		dataType:"json",
 		        		type:"POST",
-		        		data:({mode:'selectAllUser'}),
-		        		url:'userlistreport.php'
+		        		data:({mode:'selectAllProduct'}),
+		        		url:'productlistreport.php'
 		        		}
 	        	},	            
 	            dataType: "json",
@@ -144,15 +148,17 @@ var script= new function() {
 	            pageSizes: true
 	        },
 	        columns: [ 
-	        	{field: "userID",title: "ID",width: 60},
+				{field: "productID",title: "ID",width: 60,type: "number"},
 	        	{field: "code",title: "Code"},
-	        	{field: "username",title: "Username"},	        	
-	        	{field: "IDCard",title: "ID Card"},
-	        	{field: "firstName",title: "First name"},
-	        	{field: "lastName",title: "Last name"},
-	        	{field: "position",title: "Position"},
-	        	{field: "type",title: "Type"},	        	
-	        	{field: "lastAccess",title: "Last Access",format: "{0: yyyy-MM-dd HH:mm:ss}"},
+	        	{field: "category",title: "Category"},	        	
+	        	{field: "type",title: "Type"},
+	        	{field: "name",title: "Name"},
+	        	{field: "price",title: "Price",format:"{0:#.00}",type: "number"},
+	        	{field: "cost",title: "Cost",format:"{0:#.00}",type: "number"},
+	        	{field: "unit",title: "Unit"},
+	        	{field: "quantity",title: "Quantity",format:"{0:#}",type: "number"},
+	        	{field: "pointOfOrder",title: "Point Of Order",format:"{0:#}",type: "number"},	        	
+	        	{field: "lastUpdate",title: "Last Update",format: "{0: yyyy-MM-dd HH:mm:ss}"},
 	        	{field: "status", title:"Status",template:'#=status==1?"Active":"Inactive"#'}
 	        	],
 	        toolbar: [
@@ -180,8 +186,8 @@ var script= new function() {
 			$("#gridTable").data("kendoGrid").dataSource.read({search:$('#txtsearch').val(),mode:'search'});
 		});	
 		$("#export").click(function(e) { 
-			var rows=$.parseJSON(ajax('userlistreport.php',({mode:'search',search:$('#txtsearch').val()}),false));
-			$("body").append('<form id="exportform" action="export.php" method="post" target="_blank"><input type="hidden" id="reportname" name="reportname" value="userListReport" /><input type="hidden" id="exportdata" name="exportdata" /></form>');
+			var rows=$.parseJSON(ajax('productlistreport.php',({mode:'search',search:$('#txtsearch').val()}),false));
+			$("body").append('<form id="exportform" action="export.php" method="post" target="_blank"><input type="hidden" id="reportname" name="reportname" value="productListReport" /><input type="hidden" id="exportdata" name="exportdata" /></form>');
 			    $("#exportdata").val(arrayToCSV(rows.data));
 			    $("#exportform").submit().remove();
 		});
@@ -222,9 +228,9 @@ var script= new function() {
 				<form id="scriptForm" action="userprofile.php" method="post" name="scriptForm">
 					<input id="mode" name="mode" type="hidden" value="insert" /><?php include_once('profileheader.php'); ?>
 					<fieldset class="k-content">
-					<legend style="color: #37b2d1">Profile report</legend>
+					<legend style="color: #37b2d1">Products report</legend>
 					<fieldset id="fprofileList">
-					<legend>Profile List</legend>
+					<legend>Products List</legend>
 					<div id="gridTable">
 					</div>
 					</fieldset>  </fieldset></form>

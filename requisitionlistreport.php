@@ -17,30 +17,29 @@ case 'search':
 	foreach ($searchTerms as $term) {
 	    $term = trim($term);
 	    if (!empty($term)) {
-	        $searchTermBits[] = "u.userID LIKE '%$term%'";
-			$searchTermBits[] = "u.code LIKE '%$term%'";
-			$searchTermBits[] = "u.IDCard LIKE '%$term%'";
+	        $searchTermBits[] = "r.requisitionID LIKE '%$term%'";
+			$searchTermBits[] = "r.code LIKE '%$term%'";
+			$searchTermBits[] = "r.requester LIKE '%$term%'";
+			$searchTermBits[] = "r.amount LIKE '%$term%'";
+			$searchTermBits[] = "r.accounttingDate LIKE '%$term%'";
 			$searchTermBits[] = "u.firstName LIKE '%$term%'";
 			$searchTermBits[] = "u.lastName LIKE '%$term%'";
-			$searchTermBits[] = "u.address LIKE '%$term%'";
-			$searchTermBits[] = "u.phone LIKE '%$term%'";
-			$searchTermBits[] = "u.mobile LIKE '%$term%'";
-			$searchTermBits[] = "u.email LIKE '%$term%'";
-			$searchTermBits[] = "u.position LIKE '%$term%'";
-			$searchTermBits[] = "u.username LIKE '%$term%'";
-			$searchTermBits[] = "ut.type LIKE '%$term%'";
 	    }
 	}
 		if(empty($_POST['search'])){
-			$strsql="SELECT u.*,ut.type FROM users u LEFT OUTER JOIN usertype ut ON u.typeID=ut.typeID";
+			$strsql="SELECT r.*,concat(u.firstName,' ',u.lastName) as recordByName FROM requisition r LEFT OUTER JOIN users u ON r.recordBy=u.userID";
 		}else{
-			$strsql="SELECT u.*,ut.type FROM users u LEFT OUTER JOIN usertype ut ON u.typeID=ut.typeID WHERE ".implode(' OR ', $searchTermBits)."";
+			$strsql="SELECT r.*,concat(u.firstName,' ',u.lastName) as recordByName FROM requisition r LEFT OUTER JOIN users u ON r.recordBy=u.userID WHERE ".implode(' OR ', $searchTermBits)."";
 		}
 		$database->showDataAsJson($strsql);
 	break;
 
-	case 'selectAllUser':
-		$strsql="SELECT u.*,ut.type FROM users u LEFT OUTER JOIN usertype ut ON u.typeID=ut.typeID";
+	case 'selectAllRequisition':
+		$strsql="SELECT r.*,concat(u.firstName,' ',u.lastName) as recordByName FROM requisition r LEFT OUTER JOIN users u ON r.recordBy=u.userID";
+		$database->showDataAsJson($strsql);
+	break;
+	case 'selectAllRequisitionDetail':
+		$strsql="SELECT rqd.*,p.name FROM requisitiondetail rqd LEFT OUTER JOIN products p ON rqd.productID=p.productID WHERE rqd.requisitionID='".$_POST['requisitionID']."'";
 		$database->showDataAsJson($strsql);
 	break;
 endswitch;
@@ -115,14 +114,51 @@ var script= new function() {
 	var status=$('#error');
 	this.initial=function(){
     	$('#error').hide(); 
+    		    var detailInit=function(e){
+	    //console.log(e.data);
+                    $("<div/>").appendTo(e.detailCell).kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                            	read: {
+				        		dataType:"json",
+				        		type:"POST",
+				        		data:({mode:'selectAllRequisitionDetail',requisitionID:e.data.requisitionID}),
+				        		url:'requisitionlistreport.php'
+				        		}
+
+                            },
+                            pageSize: 5,
+                            schema: {
+							    data: "data",
+							    total:"total"
+							},
+                            filter: { field: "requisitionID", operator: "eq", value: e.data.requisitionID}
+                        },
+			            filterable: true,
+				        resizable: true,
+				        reorderable: true,
+				        sortable: true,
+				        columnMenu: true,
+				        selectable: "multiple",
+				        pageable: {pageSizes: true},
+                        columns: [
+                            { field: "productID", title:"Product ID",width: "60px" },
+                            { field: "name", title:"Name" },
+                            { field: "quantity", title:"Quantity"},
+                            { field: "status", title:"Status",template:'#=status==2?"Received":"Not received"#'}
+                        ]
+                    });
+                }
+
 		$("#gridTable").kendoGrid({
 	        dataSource: {
 	        	transport: {
 	        			read: {
 		        		dataType:"json",
 		        		type:"POST",
-		        		data:({mode:'selectAllUser'}),
-		        		url:'userlistreport.php'
+		        		data:({mode:'selectAllRequisition'}),
+		        		url:'requisitionlistreport.php'
 		        		}
 	        	},	            
 	            dataType: "json",
@@ -143,18 +179,15 @@ var script= new function() {
 	        pageable: {
 	            pageSizes: true
 	        },
+	        detailInit: detailInit,
 	        columns: [ 
-	        	{field: "userID",title: "ID",width: 60},
-	        	{field: "code",title: "Code"},
-	        	{field: "username",title: "Username"},	        	
-	        	{field: "IDCard",title: "ID Card"},
-	        	{field: "firstName",title: "First name"},
-	        	{field: "lastName",title: "Last name"},
-	        	{field: "position",title: "Position"},
-	        	{field: "type",title: "Type"},	        	
-	        	{field: "lastAccess",title: "Last Access",format: "{0: yyyy-MM-dd HH:mm:ss}"},
-	        	{field: "status", title:"Status",template:'#=status==1?"Active":"Inactive"#'}
-	        	],
+	        	{field: "requisitionID",title: "ID",width: 60,type: "number"},
+	        	{field: "code",title: "Code",width: 100},
+	        	{field: "requester",title: "Requester"},	        	
+	        	{field: "accounttingDate",title: "Accountting Date",format: "{0: yyyy-MM-dd HH:mm:ss}"},
+	        	{field: "amount",title: "Amount",width: 70},
+	        	{field: "recordByName",title: "Record By"},
+	        	{field: "status",title: "Status",template:'#=status==2?"Completed":"Pending"#'} 	        	],
 	        toolbar: [
 	        	{
 	        	template: '<input id="txtsearch" name="txtsearch" type="text"  value="" class="input">'
@@ -180,8 +213,8 @@ var script= new function() {
 			$("#gridTable").data("kendoGrid").dataSource.read({search:$('#txtsearch').val(),mode:'search'});
 		});	
 		$("#export").click(function(e) { 
-			var rows=$.parseJSON(ajax('userlistreport.php',({mode:'search',search:$('#txtsearch').val()}),false));
-			$("body").append('<form id="exportform" action="export.php" method="post" target="_blank"><input type="hidden" id="reportname" name="reportname" value="userListReport" /><input type="hidden" id="exportdata" name="exportdata" /></form>');
+			var rows=$.parseJSON(ajax('requisitionlistreport.php',({mode:'search',search:$('#txtsearch').val()}),false));
+			$("body").append('<form id="exportform" action="export.php" method="post" target="_blank"><input type="hidden" id="reportname" name="reportname" value="requisitionListReport" /><input type="hidden" id="exportdata" name="exportdata" /></form>');
 			    $("#exportdata").val(arrayToCSV(rows.data));
 			    $("#exportform").submit().remove();
 		});
@@ -222,9 +255,9 @@ var script= new function() {
 				<form id="scriptForm" action="userprofile.php" method="post" name="scriptForm">
 					<input id="mode" name="mode" type="hidden" value="insert" /><?php include_once('profileheader.php'); ?>
 					<fieldset class="k-content">
-					<legend style="color: #37b2d1">Profile report</legend>
+					<legend style="color: #37b2d1">Requisition report</legend>
 					<fieldset id="fprofileList">
-					<legend>Profile List</legend>
+					<legend>Requisition List</legend>
 					<div id="gridTable">
 					</div>
 					</fieldset>  </fieldset></form>

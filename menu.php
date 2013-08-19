@@ -26,10 +26,10 @@
 			<li id="m7"><a href="#">Reports<span class="subheader">Reports</span></a>
 			<ul>
 				<li><a href="userlistreport.php"><span>User list report</span></a></li>
-				<li><a href="#"><span>Product list report</span></a></li>
-				<li><a href="#"><span>Requisition list report</span></a></li>
-				<li><a href="#"><span>Purchase Order list report</span></a></li>
-				<li><a href="#"><span>Receive Product report</span></a></li>
+				<li><a href="productlistreport.php"><span>Product list report</span></a></li>
+				<li><a href="requisitionlistreport.php"><span>Requisition list report</span></a></li>
+				<li><a href="purchaselistreport.php"><span>Purchase Order list report</span></a></li>
+				<li><a href="receivedlistreport.php"><span>Receive Product report</span></a></li>
 
 			</ul>
 
